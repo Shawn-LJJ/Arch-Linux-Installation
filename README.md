@@ -68,3 +68,100 @@ For the first partition, it will be the EFI partition. The partition number and 
 *If asked whether to remove vfat signature, enter `Y`.*
 
 Enter `t` to change the partition type.
+
+It will select partition 1 by default. To switch to EFI partition, enter `1`.
+
+Create another new partition by entering `n`.
+
+For this second partition, it will be Linux Swap which acts like virtual memory. The partition number and first sector will be default once again, and for the last sector, I will opt `+8G` or 8GB of swap partition. There's no consensus on how much swap I really need, it really depends, so it will vary.
+
+Enter `t` to change the partition type and enter `2` for partition 2.
+
+For Linux Swap, the alias will be `19`.
+
+Finally, create a last partition for the root `/` with `n`, and enter the rest by default since it will be taking up the remainder of the SSD. I do not need to change the partition type since the default is Linux Filesystem.
+
+| Partition type | Size | Alias |
+| -------------- | ---- | ----- |
+| EFI System | 500MB | 1 |
+| Linux Swap | 8GB | 19 |
+| Linux Filesystem | \**Remainder* | 20 |
+
+\* The laptop has around 477GB of storage, so the remainder in this case will be 468.5GB. It'll vary depending on how much I allocate for the EFI and swap partitions
+
+Lastly, enter `w` to write all the changes to the disk and exit to the terminal.
+
+## Partition formatting
+
+The partitions created can't be used without any file system; the file system is needed for how data is being organised. For the EFI system, it is mandatory to use FAT32; Swap partition with creating swap area; Linux Filesystem with EXT4.
+
+The following commands will do the formatting in sequence above:
+
+    mkfs.fat -F 32 /dev/nvme0n1p1
+    mkswap /dev/nvme0n1p2
+    mkfs.ext4 /dev/nvme0n1p3
+
+## Mounting file systems
+
+Now I need to mount the partitions to the appropriate location. The EFI partition will be mounted to `/mnt/boot`, but that directory does not exist so I add the `--mkdir` parameter. As for swap partition, I simply have to enable it. And for the Linux Filesystem, I will mount it to `/mnt`.
+
+The following commands will do the mounting in sequence above:
+
+    mount --mkdir /dev/nvme0n1p1 /mnt/boot
+    swapon /dev/nvme0n1p2
+    mount /dev/nvme0n1p3 /mnt
+
+This will be the final product:
+
+| Partition type | File system | Mount point |
+| -------------- | ---- | ----- |
+| EFI System | `FAT32` | `/mnt/boot` |
+| Linux Swap | `[SWAP]` | `[SWAP]` |
+| Linux Filesystem | `EXT4` | `/mnt` |
+
+## Installation
+
+Installing all the foundations of the systems as well as the essential tools (and may be essential) needed. The command to install will be this:
+
+    pacstrap /mnt base linux linux-firmware linux-headers grub efibootmgr intel-ucode man nano gedit networkmanager pulseaudio reflector base-devel git
+
+## Configuration
+
+To make sure that the appropriate mountings can be done automatically every time the machine boots, I will generate a fstab file based on the current mounting. The command to generate the fstab will be this:
+
+    genfstab -U /mnt >> /mnt/etc/fstab
+
+Next, I will be transferring root into the newly installed system with the command:
+
+    arch-chroot /mnt
+
+## Timezone
+
+Since `timedatectl` no longer works after chroot, I will have to manually create a link so that the correct timezone can be set on the system. The command will be:
+
+    ln -sfv /usr/share/zoneinfo/Singapore/Singapore /etc/localtime
+
+Once done, adjust the hardware clock based on the system clock with the command:
+
+    hwclock --systohc
+
+## Localisation
+
+Edit the file `/etc/locale.gen` and uncomment `en_SG.UTF-8 UTF-8`. Once done, generate the configuration with the command:
+
+    locale.gen
+
+troubleshoot tomorrow...
+
+
+
+
+# Set up bootloader
+
+explain tomorrow
+
+    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+
+and
+
+    grub-mkconfig -o /boot/grub/grub.cfg
