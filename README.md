@@ -186,10 +186,12 @@ Finally, assign passwords to both the user account and root:
 
 ## Set up bootloader
 
-halfway
+Most importantly, a bootloader is needed so that the laptop can boot up independently of the install media. 
+
+Use `grub-install` to install GRUB onto the EFI system partition:
 
     grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 
-and
+And then a GRUB configuration file is needed for GRUB to read during boot, so I can generate it with:
 
     grub-mkconfig -o /boot/grub/grub.cfg
