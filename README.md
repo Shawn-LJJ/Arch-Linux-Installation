@@ -103,11 +103,12 @@ The following commands will do the formatting in sequence above:
 
 ## Mounting file systems
 
-Now I need to mount the partitions to the appropriate location. The EFI partition will be mounted to `/mnt/boot`, but that directory does not exist so I add the `--mkdir` parameter. As for swap partition, I simply have to enable it. And for the Linux Filesystem, I will mount it to `/mnt`.
+Now I need to mount the partitions to the appropriate location. The EFI partition will be mounted to `/mnt/boot`, but that directory does not exist so I need to create first. As for swap partition, I simply have to enable it. And for the Linux Filesystem, I will mount it to `/mnt`.
 
 The following commands will do the mounting in sequence above:
 
-    mount --mkdir /dev/nvme0n1p1 /mnt/boot
+    mkdir /mnt/boot
+    mount /dev/nvme0n1p1 /mnt/boot
     swapon /dev/nvme0n1p2
     mount /dev/nvme0n1p3 /mnt
 
@@ -123,7 +124,7 @@ This will be the final product:
 
 Installing all the foundations of the systems as well as the essential tools (and may be essential) needed. The command to install will be this:
 
-    pacstrap /mnt base linux linux-firmware linux-headers grub efibootmgr intel-ucode man nano gedit networkmanager pulseaudio reflector base-devel git
+    pacstrap /mnt base linux linux-firmware linux-headers grub efibootmgr intel-ucode man vim nano gedit networkmanager pulseaudio reflector base-devel git
 
 ## Configuration
 
@@ -147,18 +148,45 @@ Once done, adjust the hardware clock based on the system clock with the command:
 
 ## Localisation
 
-Edit the file `/etc/locale.gen` and uncomment `en_SG.UTF-8 UTF-8`. Once done, generate the configuration with the command:
+Edit the file `/etc/locale.gen` and uncomment `en_SG.UTF-8 UTF-8`. Once done, generate the locale with the command:
 
-    locale.gen
+    locale-gen
 
-troubleshoot tomorrow...
+Once generated, append a line to `/etc/locale.conf` such that the system will use the locale I want:
 
+    echo "LANG=en_SG.UTF-8" >> /etc/locale.conf
 
+## Network configuration
 
+Add a hostname to my system:
 
-# Set up bootloader
+    echo "Shawn-Arch-Linux" >> /etc/hostname
 
-explain tomorrow
+Modify `/etc/hosts` and add the following lines:
+
+    127.0.0.1   localhost
+    ::1         localhost
+    127.0.1.1   Shawn-Arch-Linux
+
+## User account and passowrd
+
+Create my own user account that allows me to run administrative task.
+
+First, modify the `/etc/sudoers` file with `visudo` such that `wheel ALL=(ALL:ALL) ALL` is uncommented. The wheel group allows users to have administrative privilege.
+
+Next, create my own account and assign myself to the appropriate group:
+
+    useradd -m shawn
+    usermod -aG wheel shawn
+
+Finally, assign passwords to both the user account and root:
+
+    passwd shawn
+    passwd
+
+## Set up bootloader
+
+halfway
 
     grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 
