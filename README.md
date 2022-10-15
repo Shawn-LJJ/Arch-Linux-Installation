@@ -205,18 +205,22 @@ Once our bootloader is configured, the laptop is now able to boot without the in
 If everything is working according to plan, the laptop should be able to carry on setting up without the installation media. For now, I need to start some services, which are `NetworkManager` and `reflector`. The former to handle network connection while the latter to automatically update the mirror list.
 
     systemctl enable NetworkManager reflector
+
+Although I have "enabled" them, that does not mean they are started, it just makes them activated automatically after a system boot. So to activate them right now, run the command:
+
+    systemctl start NetworkManager reflector
     
 Now that the services are started, I can use NetworkManager to connect to my home router again with `nmtui`.
 
 ## Install a desktop environment
 
-Now I need a desktop environment which provides all the components needed to set up the graphical user interface. For minimalism and simplicity, I picked XFCE. May try i3wm in the future.
+Now I need a desktop environment which provides all the components needed to set up the graphical user interface. For minimalism and simplicity, I picked XFCE. *May try i3wm in the future.*
 
 This is the following command to install the necessary packages:
 
     pacman -S xorg-server xfce4 xfce4-goodies
 
-*For some reason, I received an error when installing packages with Pacman, issue solved with https://wiki.archlinux.org/title/Pacman/Package_signing#Resetting_all_the_keys
+*For some reason, I received an error when installing packages with Pacman, issue solved with https://wiki.archlinux.org/title/Pacman/Package_signing#Resetting_all_the_keys.
 Might have somehow messed up the keys.*
 
 Now a display manager is required for user login.
@@ -229,4 +233,15 @@ Finally, I need to make sure the display manager will start after boot. So it ne
 
 Once done, reboot for everything to take effect.
 
-### install nftables, yay
+## Final set up
+
+Now that everything is working and the desktop display is showing, I can start installing all the everyday tools that I will be using -- a browser, word processor, code editor, etc. Not to mention installing an AUR helper that can automate the process of downloading the package from the AUR, build and then install the package. 
+
+I will pick paru as the AUR helper to handle all the process.
+
+Since paru only exists on the AUR, I have to manually download, and build and install the package:
+
+    git clone https://aur.archlinux.org/paru.git
+    cd paru
+    makepkg -si
+    
