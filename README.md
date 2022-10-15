@@ -21,7 +21,7 @@ To verify that the system is booted in UEFI mode, list the efivars directory:
 
 ## Enable Network Time Protocol (NTP)
 
-Turn on NTP to ensure that the clock is always synchronise to the internet.
+Turn on NTP to ensure that the clock is synchronised to the internet.
 
     timedatectl set-ntp true
   
@@ -105,12 +105,12 @@ The following commands will do the formatting in sequence above:
 
 Now I need to mount the partitions to the appropriate location. The EFI partition will be mounted to `/mnt/boot`, but that directory does not exist so I need to create first. As for swap partition, I simply have to enable it. And for the Linux Filesystem, I will mount it to `/mnt`.
 
-The following commands will do the mounting in sequence above:
+The following commands will do the mounting in the correct order:
 
+    mount /dev/nvme0n1p3 /mnt
     mkdir /mnt/boot
     mount /dev/nvme0n1p1 /mnt/boot
     swapon /dev/nvme0n1p2
-    mount /dev/nvme0n1p3 /mnt
 
 This will be the final product:
 
@@ -172,7 +172,7 @@ Modify `/etc/hosts` and add the following lines:
 
 Create my own user account that allows me to run administrative task.
 
-First, modify the `/etc/sudoers` file with `visudo` such that `wheel ALL=(ALL:ALL) ALL` is uncommented. The wheel group allows users to have administrative privilege.
+First, modify the `/etc/sudoers` file with `visudo` such that `wheel ALL=(ALL:ALL) ALL` is uncommented. The wheel group allows users within the group to have administrative privilege.
 
 Next, create my own account and assign myself to the appropriate group:
 
@@ -195,3 +195,38 @@ Use `grub-install` to install GRUB onto the EFI system partition:
 And then a GRUB configuration file is needed for GRUB to read during boot, so I can generate it with:
 
     grub-mkconfig -o /boot/grub/grub.cfg
+
+Once our bootloader is configured, the laptop is now able to boot without the installation media. Power the laptop off and turn it back on to see if it works.
+
+    poweroff
+
+## Post-boot set up
+
+If everything is working according to plan, the laptop should be able to carry on setting up without the installation media. For now, I need to start some services, which are `NetworkManager` and `reflector`. The former to handle network connection while the latter to automatically update the mirror list.
+
+    systemctl enable NetworkManager reflector
+    
+Now that the services are started, I can use NetworkManager to connect to my home router again with `nmtui`.
+
+## Install a desktop environment
+
+Now I need a desktop environment which provides all the components needed to set up the graphical user interface. For minimalism and simplicity, I picked XFCE. May try i3wm in the future.
+
+This is the following command to install the necessary packages:
+
+    pacman -S xorg-server xfce4 xfce4-goodies
+
+*For some reason, I received an error when installing packages with Pacman, issue solved with https://wiki.archlinux.org/title/Pacman/Package_signing#Resetting_all_the_keys
+Might have somehow messed up the keys.*
+
+Now a display manager is required for user login.
+
+    pacman -S lightdm lightdm-gtk-greeter
+
+Finally, I need to make sure the display manager will start after boot. So it needs to be enabled:
+
+    systemctl enable lightdm
+
+Once done, reboot for everything to take effect.
+
+### install nftables, yay
